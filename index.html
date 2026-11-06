@@ -165,22 +165,29 @@
   let threshold = null;   // 第一次載入時從 votes.json 的 threshold 帶入
 
   async function loadData() {
-    try {
-      // 加上 timestamp 防止瀏覽器快取 votes.json
-      const res = await fetch(`votes.json?t=${Date.now()}`);
-      if (!res.ok) throw new Error("尚未找到資料檔");
+    // 優先從 raw.githubusercontent 讀(push 後幾秒就更新,不用等 Pages 部署 2~5 分鐘),
+    // 失敗時退回讀 Pages 上的 votes.json
+    const sources = [
+      'https://raw.githubusercontent.com/kenlee60601-web/fb-vote-tracker/main/votes.json',
+      'votes.json',
+    ];
+    for (const src of sources) {
+      try {
+        // 加上 timestamp 防止快取
+        const res = await fetch(`${src}?t=${Date.now()}`);
+        if (!res.ok) continue;
+        currentData = await res.json();
 
-      currentData = await res.json();
-
-      // 只在第一次載入時設定門檻,之後以使用者輸入為準
-      if (threshold === null) {
-        threshold = Number.isFinite(currentData.threshold) ? currentData.threshold : DEFAULT_THRESHOLD;
-        document.getElementById('thresholdInput').value = threshold;
-      }
-      render(currentData);
-    } catch (err) {
-      document.getElementById('updateTime').innerText = "資料載入失敗，稍後重試";
+        // 只在第一次載入時設定門檻,之後以使用者輸入為準
+        if (threshold === null) {
+          threshold = Number.isFinite(currentData.threshold) ? currentData.threshold : DEFAULT_THRESHOLD;
+          document.getElementById('thresholdInput').value = threshold;
+        }
+        render(currentData);
+        return;
+      } catch (err) { /* 換下一個來源 */ }
     }
+    document.getElementById('updateTime').innerText = "資料載入失敗，稍後重試";
   }
 
   function filteredList(payload) {
