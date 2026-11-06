@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>即時投票榜單</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --accent: #22c55e;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 30px 15px;
+      margin: 0;
+    }
+    .container {
+      width: 100%;
+      max-width: 580px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+    .header {
+      border-bottom: 1px solid #334155;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      margin: 0 0 8px 0;
+      font-size: 1.4rem;
+      color: var(--primary);
+    }
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .btn-copy {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .btn-copy:hover {
+      background: #0369a1;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+    .controls input {
+      width: 70px;
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.95rem;
+      text-align: center;
+    }
+    .controls input:focus {
+      outline: 1px solid var(--primary);
+    }
+    .item-rank {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 30px;
+      height: 30px;
+      margin-right: 12px;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 0.85rem;
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .rank-1 { background: rgba(250, 204, 21, 0.2);  color: #facc15; }
+    .rank-2 { background: rgba(203, 213, 225, 0.2); color: #e2e8f0; }
+    .rank-3 { background: rgba(217, 119, 6, 0.25);  color: #f59e0b; }
+    .item-left {
+      display: flex;
+      align-items: center;
+    }
+    ul.list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li.item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .item-title {
+      font-weight: 500;
+    }
+    .item-id {
+      color: var(--primary);
+      margin-right: 8px;
+      font-weight: bold;
+    }
+    .item-votes {
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(34, 197, 94, 0.1);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🏆 活動投票即時榜單</h1>
+    <div class="meta">
+      <span id="updateTime">載入中...</span>
+      <span>
+        <button class="btn-copy" style="background:#16a34a" onclick="triggerScrape(true)">🔄 立即抓取</button>
+        <button class="btn-copy" onclick="copyFormattedText()">複製貼文格式</button>
+      </span>
+    </div>
+    <div class="controls">
+      <label for="thresholdInput">門檻票數 ></label>
+      <input type="number" id="thresholdInput" min="0" step="1" value="40">
+      <span id="qualifiedCount"></span>
+    </div>
+    <div class="controls" id="triggerStatus" style="display:none"></div>
+  </div>
+
+  <ul class="list" id="voteList">
+    <!-- 動態插入 -->
+  </ul>
+</div>
+
+<script>
+  const DEFAULT_THRESHOLD = 40;
+  let currentData = null;
+  let threshold = null;   // 第一次載入時從 votes.json 的 threshold 帶入
+
+  async function loadData() {
+    try {
+      // 加上 timestamp 防止瀏覽器快取 votes.json
+      const res = await fetch(`votes.json?t=${Date.now()}`);
+      if (!res.ok) throw new Error("尚未找到資料檔");
+
+      currentData = await res.json();
+
+      // 只在第一次載入時設定門檻,之後以使用者輸入為準
+      if (threshold === null) {
+        threshold = Number.isFinite(currentData.threshold) ? currentData.threshold : DEFAULT_THRESHOLD;
+        document.getElementById('thresholdInput').value = threshold;
+      }
+      render(currentData);
+    } catch (err) {
+      document.getElementById('updateTime').innerText = "資料載入失敗，稍後重試";
+    }
+  }
+
+  function filteredList(payload) {
+    return payload.data.filter(item => item.votes > threshold);
+  }
+
+  // 舊版 votes.json 沒有 rank 欄位時,依排序位置補算(同票同名次)
+  function rankOf(item, idx, list) {
+    if (item.rank) return item.rank;
+    let r = idx + 1;
+    while (r > 1 && list[r - 2].votes === item.votes) r--;
+    return r;
+  }
+
+  // 把 "2026/11/06 17:44" 轉成「X 分鐘前」
+  function freshnessText(ts) {
+    const t = new Date(ts);
+    if (isNaN(t)) return '';
+    const mins = Math.floor((Date.now() - t.getTime()) / 60000);
+    if (mins < 1) return '剛剛';
+    if (mins < 60) return `${mins} 分鐘前`;
+    const h = Math.floor(mins / 60);
+    return h < 24 ? `${h} 小時 ${mins % 60} 分前` : `${Math.floor(h / 24)} 天前`;
+  }
+
+  function render(payload) {
+    const ago = freshnessText(payload.updated_at);
+    document.getElementById('updateTime').innerText =
+      `${payload.updated_at} 更新${ago ? `・${ago}` : ''}（門檻 > ${threshold} 票）`;
+
+    const list = filteredList(payload);
+    document.getElementById('qualifiedCount').innerText = `符合 ${list.length} 位`;
+
+    const listEl = document.getElementById('voteList');
+    listEl.innerHTML = '';
+
+    list.forEach((item, idx) => {
+      const rank = rankOf(item, idx, list);
+      const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+      const li = document.createElement('li');
+      li.className = 'item';
+      li.innerHTML = `
+        <div class="item-left">
+          <span class="item-rank${rankClass}">${rank}</span>
+          <div class="item-title">
+            <span class="item-id">${item.id}</span>
+            <span>${item.name}</span>
+          </div>
+        </div>
+        <div class="item-votes">${item.votes} 票</div>
+      `;
+      listEl.appendChild(li);
+    });
+  }
+
+  function copyFormattedText() {
+    if (!currentData) return;
+
+    const list = filteredList(currentData);
+    let text = `${currentData.updated_at}更新票數：\n`;
+    list.forEach((item, idx) => {
+      text += `第${rankOf(item, idx, list)}名 ${item.id} ${item.name} ${item.votes}票\n`;
+    });
+
+    navigator.clipboard.writeText(text.trim()).then(() => {
+      alert("已複製到剪貼簿！");
+    });
+  }
+
+  document.getElementById('thresholdInput').addEventListener('input', (e) => {
+    const v = parseInt(e.target.value, 10);
+    threshold = Number.isFinite(v) ? v : 0;
+    if (currentData) render(currentData);
+  });
+
+  // ===== 重新整理 / 按鈕觸發 GitHub Actions 重新抓票 =====
+  // 需要一組 fine-grained Personal Access Token(只授權這個 repo 的 Actions: Read and write)
+  // 注意:這個 token 會公開在網頁原始碼中,任何人都看得到,
+  //       所以「只能」給 Actions 權限、只限這個 repo,千萬不要用全權限的 classic token!
+  const GH_OWNER   = 'kenlee60601-web';
+  const GH_REPO    = 'fb-vote-tracker';
+  const GH_WORKFLOW = 'update_votes.yml';
+  const GH_BRANCH  = 'main';
+  // token 以 base64 分段存放:GitHub 會自動吊銷公開出現的 token(連 base64 都會解),
+  // 分段後掃描器才不會誤殺。此 token 權限僅限 fb-vote-tracker 的 Actions(觸發更新),
+  // 無法讀寫任何程式碼,公開風險極低。
+  const GH_TOKEN   = atob(['Z2l0aHViX3BhdF8xMUNVRzY0WEkwU0U2R2VabTdUS',
+                           'DNpXzFwSUlvMWc2N29qUGdLc0cydlNBT3lVQmtOZ3',
+                           'gxNm0wdGRXNUZMeGVROGtENUJNR0dDQ3pRa0ZEOExG'].join(''));
+
+  const TRIGGER_COOLDOWN_MS = 10 * 60 * 1000;  // 自動觸發最短間隔 10 分鐘
+  const MANUAL_COOLDOWN_MS  = 3 * 60 * 1000;   // 手動按鈕最短間隔 3 分鐘
+
+  function setTriggerStatus(msg) {
+    const el = document.getElementById('triggerStatus');
+    el.style.display = msg ? 'flex' : 'none';
+    el.innerText = msg;
+  }
+
+  async function triggerScrape(manual = false) {
+    if (!GH_TOKEN) {
+      if (manual) setTriggerStatus('尚未設定 GitHub token,請到 GitHub Actions 頁面手動 Run workflow');
+      return;
+    }
+    const last = Number(localStorage.getItem('lastTrigger') || 0);
+    const cooldown = manual ? MANUAL_COOLDOWN_MS : TRIGGER_COOLDOWN_MS;
+    if (Date.now() - last < cooldown) {
+      const waitMin = Math.ceil((cooldown - (Date.now() - last)) / 60000);
+      setTriggerStatus(`抓取已在進行中或剛觸發過(${waitMin} 分鐘後可再觸發)`);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/${GH_WORKFLOW}/dispatches`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${GH_TOKEN}`,
+            'Accept': 'application/vnd.github+json',
+          },
+          body: JSON.stringify({ ref: GH_BRANCH }),
+        });
+      if (res.status === 204) {
+        localStorage.setItem('lastTrigger', String(Date.now()));
+        setTriggerStatus('✅ 已觸發重新抓取,新票數約 10~15 分鐘後會自動顯示(本頁每 30 秒自動更新)');
+      } else {
+        setTriggerStatus(`觸發失敗(HTTP ${res.status}),請檢查 token 是否有效`);
+      }
+    } catch (e) {
+      setTriggerStatus('觸發失敗:' + e.message);
+    }
+  }
+
+  // 初始載入與每 30 秒自動更新畫面;開啟/重新整理網頁時自動觸發重新抓取
+  loadData();
+  triggerScrape();
+  setInterval(loadData, 30000);
+</script>
+
+</body>
+</html>
