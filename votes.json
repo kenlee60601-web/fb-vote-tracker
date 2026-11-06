@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/06 22:25",
+  "updated_at": "2026/11/06 22:55",
   "threshold": 40,
   "total_qualified": 13,
   "data": [
@@ -18,7 +18,7 @@
     {
       "id": "45號",
       "name": "汪汪隊",
-      "votes": 159,
+      "votes": 165,
       "rank": 3
     },
     {
@@ -66,14 +66,14 @@
     {
       "id": "19號",
       "name": "獵魔女團",
-      "votes": 64,
+      "votes": 65,
       "rank": 11
     },
     {
       "id": "43號",
       "name": "仙子",
       "votes": 64,
-      "rank": 11
+      "rank": 12
     },
     {
       "id": "2號",
