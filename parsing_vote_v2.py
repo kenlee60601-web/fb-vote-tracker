@@ -23,7 +23,7 @@ from playwright.async_api import async_playwright
 POST_URL = "https://www.facebook.com/share/p/1A4HKRLQxW/"
 SET_ID = "pcb.1634580118461071"
 FIRST_FBID = "1634578518461231"
-THRESHOLD = 40
+THRESHOLD = 10
 NAMES_FILE = "photo_names.json"
 RAW_FILE = "album_raw.json"
 OUTPUT_JSON = "votes.json"

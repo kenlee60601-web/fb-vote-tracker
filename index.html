@@ -148,7 +148,7 @@
     </div>
     <div class="controls">
       <label for="thresholdInput">門檻票數 ></label>
-      <input type="number" id="thresholdInput" min="0" step="1" value="40">
+      <input type="number" id="thresholdInput" min="0" step="1" value="10">
       <span id="qualifiedCount"></span>
     </div>
     <div class="controls" id="triggerStatus" style="display:none"></div>
@@ -160,7 +160,7 @@
 </div>
 
 <script>
-  const DEFAULT_THRESHOLD = 40;
+  const DEFAULT_THRESHOLD = 10;
   let currentData = null;
   let threshold = null;   // 第一次載入時從 votes.json 的 threshold 帶入
 
