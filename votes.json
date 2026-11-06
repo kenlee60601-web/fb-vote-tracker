@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/07 00:19",
+  "updated_at": "2026/11/07 00:25",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -84,7 +84,7 @@
     {
       "id": "35號",
       "name": "警察小隊長",
-      "votes": 39,
+      "votes": 40,
       "rank": 14
     },
     {
