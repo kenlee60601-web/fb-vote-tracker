@@ -164,38 +164,46 @@
   let currentData = null;
   let threshold = null;   // 第一次載入時從 votes.json 的 threshold 帶入
 
-  async function loadData() {
-    // 三層資料來源,由新到舊:
-    // 1. GitHub API:只有 1 分鐘快取,push 後最快看到(每小時 60 次/每位訪客,夠用)
-    // 2. raw:有 5 分鐘 CDN 快取,API 失敗時備援
-    // 3. Pages 上的 votes.json:最後備援
-    const attempts = [
-      ['https://api.github.com/repos/kenlee60601-web/fb-vote-tracker/contents/votes.json?ref=main',
-       { headers: { 'Accept': 'application/vnd.github.raw+json' } }],
-      [`https://raw.githubusercontent.com/kenlee60601-web/fb-vote-tracker/main/votes.json?t=${Date.now()}`, {}],
-      [`votes.json?t=${Date.now()}`, {}],
+  async function fetchVotes() {
+    // 1) GitHub API:push 後幾秒就是新資料(帶 token,流量上限 5000 次/小時)
+    try {
+      const res = await fetch(
+        'https://api.github.com/repos/kenlee60601-web/fb-vote-tracker/contents/votes.json?ref=main',
+        {
+          headers: { 'Accept': 'application/vnd.github.raw+json',
+                     'Authorization': `Bearer ${GH_TOKEN}` },
+          cache: 'no-store',
+        });
+      if (res.ok) return await res.json();
+    } catch (err) { /* 換下一個來源 */ }
+    // 2) raw(約 5 分鐘快取)→ 3) Pages(部署延遲 2~5 分鐘)
+    const sources = [
+      'https://raw.githubusercontent.com/kenlee60601-web/fb-vote-tracker/main/votes.json',
+      'votes.json',
     ];
-    for (const [url, opts] of attempts) {
+    for (const src of sources) {
       try {
-        const res = await fetch(url, opts);
-        if (!res.ok) continue;
-        const data = await res.json();
-        // 只接受比目前畫面新(或一樣新)的資料,避免快取舊檔蓋掉新票數
-        if (currentData && data.updated_at < currentData.updated_at) continue;
-        currentData = data;
-
-        // 只在第一次載入時設定門檻,之後以使用者輸入為準
-        if (threshold === null) {
-          threshold = Number.isFinite(currentData.threshold) ? currentData.threshold : DEFAULT_THRESHOLD;
-          document.getElementById('thresholdInput').value = threshold;
-        }
-        render(currentData);
-        return;
+        const res = await fetch(`${src}?t=${Date.now()}`);
+        if (res.ok) return await res.json();
       } catch (err) { /* 換下一個來源 */ }
     }
-    if (!currentData) {
+    return null;
+  }
+
+  async function loadData() {
+    const data = await fetchVotes();
+    if (!data) {
       document.getElementById('updateTime').innerText = "資料載入失敗，稍後重試";
+      return;
     }
+    currentData = data;
+
+    // 只在第一次載入時設定門檻,之後以使用者輸入為準
+    if (threshold === null) {
+      threshold = Number.isFinite(currentData.threshold) ? currentData.threshold : DEFAULT_THRESHOLD;
+      document.getElementById('thresholdInput').value = threshold;
+    }
+    render(currentData);
   }
 
   function filteredList(payload) {
