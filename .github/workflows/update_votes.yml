@@ -1,8 +1,8 @@
 name: Update FB Votes
 
 # 此 workflow 不會爬 FB(FB 封鎖 GitHub 機房 IP,2026/11/06 確認)。
-# 它只是「信號」:網頁上的 🔄 立即抓取 按鈕觸發它之後,
-# 本機執行中的 parsing_vote_v2.py --loop 會在 15 秒內偵測到並立即重爬。
+# 網頁按鈕已移除,票數改由本機 parsing_vote_v2.py 每 5 分鐘自動抓取一次。
+# 此 workflow 保留僅供手動測試。
 on:
   workflow_dispatch:
 

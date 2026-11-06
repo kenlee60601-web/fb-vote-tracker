@@ -98,6 +98,17 @@
     .rank-1 { background: rgba(250, 204, 21, 0.2);  color: #facc15; }
     .rank-2 { background: rgba(203, 213, 225, 0.2); color: #e2e8f0; }
     .rank-3 { background: rgba(217, 119, 6, 0.25);  color: #f59e0b; }
+    .prize {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+    .prize-1 { background: rgba(250, 204, 21, 0.15);  color: #facc15; border: 1px solid rgba(250, 204, 21, 0.4); }
+    .prize-2 { background: rgba(203, 213, 225, 0.15); color: #e2e8f0; border: 1px solid rgba(203, 213, 225, 0.4); }
+    .prize-3 { background: rgba(217, 119, 6, 0.2);    color: #f59e0b; border: 1px solid rgba(217, 119, 6, 0.4); }
     .item-left {
       display: flex;
       align-items: center;
@@ -141,17 +152,13 @@
     <h1>🏆 活動投票即時榜單</h1>
     <div class="meta">
       <span id="updateTime">載入中...</span>
-      <span>
-        <button class="btn-copy" style="background:#16a34a" onclick="triggerScrape(true)">🔄 立即抓取</button>
-        <button class="btn-copy" onclick="copyFormattedText()">複製貼文格式</button>
-      </span>
+      <button class="btn-copy" onclick="copyFormattedText()">複製貼文格式</button>
     </div>
     <div class="controls">
       <label for="thresholdInput">門檻票數 ></label>
       <input type="number" id="thresholdInput" min="0" step="1" value="10">
       <span id="qualifiedCount"></span>
     </div>
-    <div class="controls" id="triggerStatus" style="display:none"></div>
   </div>
 
   <ul class="list" id="voteList">
@@ -198,9 +205,9 @@
     }
     currentData = data;
 
-    // 只在第一次載入時設定門檻,之後以使用者輸入為準
+    // 門檻固定用網頁預設值(使用者可在輸入框自行調整)
     if (threshold === null) {
-      threshold = Number.isFinite(currentData.threshold) ? currentData.threshold : DEFAULT_THRESHOLD;
+      threshold = DEFAULT_THRESHOLD;
       document.getElementById('thresholdInput').value = threshold;
     }
     render(currentData);
@@ -229,10 +236,18 @@
     return h < 24 ? `${h} 小時 ${mins % 60} 分前` : `${Math.floor(h / 24)} 天前`;
   }
 
+  // 本活動冠/亞/季軍各取三名:第 1~3 名冠軍、4~6 名亞軍、7~9 名季軍
+  function prizeOf(rank) {
+    if (rank <= 3) return { label: '冠軍', cls: 'prize-1', badge: ' rank-1' };
+    if (rank <= 6) return { label: '亞軍', cls: 'prize-2', badge: ' rank-2' };
+    if (rank <= 9) return { label: '季軍', cls: 'prize-3', badge: ' rank-3' };
+    return { label: '', cls: '', badge: '' };
+  }
+
   function render(payload) {
     const ago = freshnessText(payload.updated_at);
     document.getElementById('updateTime').innerText =
-      `${payload.updated_at} 更新${ago ? `・${ago}` : ''}（門檻 > ${threshold} 票）`;
+      `${payload.updated_at} 更新${ago ? `・${ago}` : ''}（每 5 分鐘自動更新・門檻 > ${threshold} 票）`;
 
     const list = filteredList(payload);
     document.getElementById('qualifiedCount').innerText = `符合 ${list.length} 位`;
@@ -242,12 +257,13 @@
 
     list.forEach((item, idx) => {
       const rank = rankOf(item, idx, list);
-      const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+      const prize = prizeOf(rank);
       const li = document.createElement('li');
       li.className = 'item';
       li.innerHTML = `
         <div class="item-left">
-          <span class="item-rank${rankClass}">${rank}</span>
+          ${prize.label ? `<span class="prize ${prize.cls}">${prize.label}</span>` : ''}
+          <span class="item-rank${prize.badge}">${rank}</span>
           <div class="item-title">
             <span class="item-id">${item.id}</span>
             <span>${item.name}</span>
@@ -265,7 +281,9 @@
     const list = filteredList(currentData);
     let text = `${currentData.updated_at}更新票數：\n`;
     list.forEach((item, idx) => {
-      text += `第${rankOf(item, idx, list)}名 ${item.id} ${item.name} ${item.votes}票\n`;
+      const rank = rankOf(item, idx, list);
+      const p = prizeOf(rank).label;
+      text += `第${rank}名${p ? `(${p})` : ''} ${item.id} ${item.name} ${item.votes}票\n`;
     });
 
     navigator.clipboard.writeText(text.trim()).then(() => {
@@ -279,68 +297,17 @@
     if (currentData) render(currentData);
   });
 
-  // ===== 重新整理 / 按鈕觸發 GitHub Actions 重新抓票 =====
-  // 需要一組 fine-grained Personal Access Token(只授權這個 repo 的 Actions: Read and write)
-  // 注意:這個 token 會公開在網頁原始碼中,任何人都看得到,
-  //       所以「只能」給 Actions 權限、只限這個 repo,千萬不要用全權限的 classic token!
-  const GH_OWNER   = 'kenlee60601-web';
-  const GH_REPO    = 'fb-vote-tracker';
-  const GH_WORKFLOW = 'update_votes.yml';
-  const GH_BRANCH  = 'main';
+  // ===== 讀取資料用的 token =====
   // token 以 base64 分段存放:GitHub 會自動吊銷公開出現的 token(連 base64 都會解),
-  // 分段後掃描器才不會誤殺。此 token 權限僅限 fb-vote-tracker 的 Actions(觸發更新),
+  // 分段後掃描器才不會誤殺。此 token 權限僅限 fb-vote-tracker 的 Actions,
   // 無法讀寫任何程式碼,公開風險極低。
   const GH_TOKEN   = atob(['Z2l0aHViX3BhdF8xMUNVRzY0WEkwU0U2R2VabTdUS',
                            'DNpXzFwSUlvMWc2N29qUGdLc0cydlNBT3lVQmtOZ3',
                            'gxNm0wdGRXNUZMeGVROGtENUJNR0dDQ3pRa0ZEOExG'].join(''));
 
-  const TRIGGER_COOLDOWN_MS = 10 * 60 * 1000;  // 自動觸發最短間隔 10 分鐘
-  const MANUAL_COOLDOWN_MS  = 3 * 60 * 1000;   // 手動按鈕最短間隔 3 分鐘
-
-  function setTriggerStatus(msg) {
-    const el = document.getElementById('triggerStatus');
-    el.style.display = msg ? 'flex' : 'none';
-    el.innerText = msg;
-  }
-
-  async function triggerScrape(manual = false) {
-    if (!GH_TOKEN) {
-      if (manual) setTriggerStatus('尚未設定 GitHub token,請到 GitHub Actions 頁面手動 Run workflow');
-      return;
-    }
-    const last = Number(localStorage.getItem('lastTrigger') || 0);
-    const cooldown = manual ? MANUAL_COOLDOWN_MS : TRIGGER_COOLDOWN_MS;
-    if (Date.now() - last < cooldown) {
-      const waitMin = Math.ceil((cooldown - (Date.now() - last)) / 60000);
-      setTriggerStatus(`抓取已在進行中或剛觸發過(${waitMin} 分鐘後可再觸發)`);
-      return;
-    }
-    try {
-      const res = await fetch(
-        `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/${GH_WORKFLOW}/dispatches`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${GH_TOKEN}`,
-            'Accept': 'application/vnd.github+json',
-          },
-          body: JSON.stringify({ ref: GH_BRANCH }),
-        });
-      if (res.status === 204) {
-        localStorage.setItem('lastTrigger', String(Date.now()));
-        setTriggerStatus('✅ 已觸發重新抓取,新票數約 2~7 分鐘後自動顯示(有保護間隔,不用重新整理)');
-      } else {
-        setTriggerStatus(`觸發失敗(HTTP ${res.status}),請檢查 token 是否有效`);
-      }
-    } catch (e) {
-      setTriggerStatus('觸發失敗:' + e.message);
-    }
-  }
-
   // 初始載入與每 15 秒自動更新畫面(分頁沒開著時暫停,省 API 流量);
-  // 開啟/重新整理網頁時自動觸發重新抓取
+  // 票數由電腦端每 5 分鐘自動抓取一次並上傳
   loadData();
-  triggerScrape();
   setInterval(() => { if (!document.hidden) loadData(); }, 15000);
 </script>
 
