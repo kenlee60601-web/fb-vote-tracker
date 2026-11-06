@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/06 21:50",
+  "updated_at": "2026/11/06 21:58",
   "threshold": 40,
   "total_qualified": 13,
   "data": [
@@ -16,16 +16,16 @@
       "rank": 2
     },
     {
-      "id": "25號",
-      "name": "劍客",
-      "votes": 153,
+      "id": "45號",
+      "name": "汪汪隊",
+      "votes": 156,
       "rank": 3
     },
     {
-      "id": "45號",
-      "name": "汪汪隊",
+      "id": "25號",
+      "name": "劍客",
       "votes": 153,
-      "rank": 3
+      "rank": 4
     },
     {
       "id": "15號",
