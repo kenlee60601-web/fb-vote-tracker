@@ -148,7 +148,7 @@ PARALLEL = 4  # 平行瀏覽器環境數,太高可能觸發 FB 的 IP 限流
 
 async def scrape_album_fast(prev_results):
     """快速模式:照片網址已知(album_raw.json),平行直接開各照片頁讀讚數。
-    每個環境只看 4 張(FB 未登入配額),約 2~3 分鐘掃完整本相簿。"""
+    每個環境只看 4 張(FB 未登入配額),約 2 分鐘掃完整本相簿。"""
     order_fbid = [(r["order"], r["fbid"]) for r in prev_results]
     prev_votes = {r["fbid"]: r["votes"] for r in prev_results}
     chunks = [order_fbid[i:i + 4] for i in range(0, len(order_fbid), 4)]
@@ -324,7 +324,7 @@ def run_once(threshold):
         with open(RAW_FILE, encoding="utf-8") as f:
             results = json.load(f)
     elif os.path.exists(RAW_FILE) and "--full" not in sys.argv:
-        # 快速模式:平行讀取已知照片,約 2~3 分鐘
+        # 快速模式:平行讀取已知照片,約 2 分鐘
         with open(RAW_FILE, encoding="utf-8") as f:
             prev = json.load(f)
         if len(prev) >= 20:
