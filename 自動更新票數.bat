@@ -1,6 +1,8 @@
 @echo off
 chcp 65001 > nul
 cd /d "%~dp0"
+echo === 從 GitHub 取得最新版程式 ===
+git pull --rebase --autostash
 echo === 設定電腦插電時永不睡眠(螢幕可以關,程式照跑)===
 powercfg /change standby-timeout-ac 0 2>nul
 powercfg /change hibernate-timeout-ac 0 2>nul

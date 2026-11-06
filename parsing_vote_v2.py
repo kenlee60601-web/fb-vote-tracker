@@ -145,6 +145,8 @@ async def scrape_album():
 
 
 PARALLEL = 4  # 平行瀏覽器環境數,太高可能觸發 FB 的 IP 限流
+LAST_RUN_FAILED = 0       # 上一輪讀取失敗的張數(>0 代表可能被 FB 限流)
+MIN_TRIGGER_GAP = 300     # 網頁觸發最快也要距上一輪結束 5 分鐘,保護 FB 不被連續掃
 
 async def scrape_album_fast(prev_results):
     """快速模式:照片網址已知(album_raw.json),平行直接開各照片頁讀讚數。
@@ -202,6 +204,7 @@ async def scrape_album_fast(prev_results):
         json.dump(results, f, ensure_ascii=False, indent=2)
     if failed:
         print(f"注意:{failed} 張讀取失敗,沿用上一輪票數")
+    globals()["LAST_RUN_FAILED"] = failed
     return results
 
 
@@ -377,6 +380,9 @@ if __name__ == "__main__":
             while waited < loop_min * 60:
                 time.sleep(15)
                 waited += 15
+                # 距上一輪結束不到 5 分鐘,或上一輪被 FB 限流 -> 不接受提前觸發
+                if waited < MIN_TRIGGER_GAP or LAST_RUN_FAILED > 0:
+                    continue
                 t = latest_webtrigger()
                 if t and t != last_trigger:
                     last_trigger = t

@@ -328,7 +328,7 @@
         });
       if (res.status === 204) {
         localStorage.setItem('lastTrigger', String(Date.now()));
-        setTriggerStatus('✅ 已觸發重新抓取,新票數約 2~3 分鐘後自動顯示(不用重新整理)');
+        setTriggerStatus('✅ 已觸發重新抓取,新票數約 2~7 分鐘後自動顯示(有保護間隔,不用重新整理)');
       } else {
         setTriggerStatus(`觸發失敗(HTTP ${res.status}),請檢查 token 是否有效`);
       }
