@@ -7,5 +7,5 @@ powercfg /change hibernate-timeout-ac 0 2>nul
 echo === FB 投票自動更新:每 20 分鐘爬一次並自動上傳 GitHub ===
 echo === 網頁上有人按「立即抓取」會提前更新 ===
 echo === 關閉此視窗即停止 ===
-python parsing_vote_v2.py --threshold 40 --loop 20 --push
+python parsing_vote_v2.py --threshold 40 --loop 10 --push
 pause
