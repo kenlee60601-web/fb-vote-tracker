@@ -328,7 +328,7 @@
         });
       if (res.status === 204) {
         localStorage.setItem('lastTrigger', String(Date.now()));
-        setTriggerStatus('✅ 已觸發重新抓取,新票數約 10~15 分鐘後會自動顯示(本頁每 30 秒自動更新)');
+        setTriggerStatus('✅ 已觸發重新抓取,新票數約 2~3 分鐘後自動顯示(不用重新整理)');
       } else {
         setTriggerStatus(`觸發失敗(HTTP ${res.status}),請檢查 token 是否有效`);
       }
@@ -337,10 +337,11 @@
     }
   }
 
-  // 初始載入與每 30 秒自動更新畫面;開啟/重新整理網頁時自動觸發重新抓取
+  // 初始載入與每 15 秒自動更新畫面(分頁沒開著時暫停,省 API 流量);
+  // 開啟/重新整理網頁時自動觸發重新抓取
   loadData();
   triggerScrape();
-  setInterval(loadData, 30000);
+  setInterval(() => { if (!document.hidden) loadData(); }, 15000);
 </script>
 
 </body>
