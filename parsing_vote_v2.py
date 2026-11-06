@@ -278,6 +278,13 @@ def git_push():
         print("票數沒有變化,不需要 commit")
         return
     r = subprocess.run(["git", "push"], capture_output=True, text=True)
+    if r.returncode != 0:
+        # 遠端有新 commit 時,自動先拉下來再推一次
+        pr = subprocess.run(["git", "pull", "--rebase", "--autostash"],
+                            capture_output=True, text=True)
+        if pr.returncode != 0:
+            subprocess.run(["git", "rebase", "--abort"], capture_output=True)
+        r = subprocess.run(["git", "push"], capture_output=True, text=True)
     print("git push 成功" if r.returncode == 0 else f"git push 失敗: {r.stderr[:300]}")
 
 
