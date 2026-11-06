@@ -144,7 +144,7 @@ async def scrape_album():
     return results
 
 
-PARALLEL = 2  # 平行瀏覽器環境數,太高可能觸發 FB 的 IP 限流
+PARALLEL = 4  # 平行瀏覽器環境數,太高可能觸發 FB 的 IP 限流
 
 async def scrape_album_fast(prev_results):
     """快速模式:照片網址已知(album_raw.json),平行直接開各照片頁讀讚數。
