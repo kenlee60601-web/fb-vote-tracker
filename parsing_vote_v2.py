@@ -373,25 +373,24 @@ if __name__ == "__main__":
         print(f"自動循環模式:每 {loop_min} 分鐘更新一次,"
               "網頁按 🔄 立即抓取 可提前觸發 (Ctrl+C 停止)")
         while True:
+            ok = True
+            globals()["LAST_RUN_FAILED"] = 0
             try:
                 run_once(threshold)
             except KeyboardInterrupt:
                 raise
             except (Exception, SystemExit) as e:
                 print("本輪更新失敗:", e)
-            # 剛更新完,以此刻的最新觸發為基準(更新期間按的就不重複跑了)
-            last_trigger = latest_webtrigger()
+                ok = False
+            # 被限流時加倍退避:持續敲門只會讓 FB 封更久
+            if not ok:
+                wait_min = max(loop_min, 30)
+                print(f"疑似被 FB 限流,休息 {wait_min} 分鐘讓封鎖解除...")
+            elif LAST_RUN_FAILED > 0:
+                wait_min = max(loop_min, 15)
+                print(f"部分照片讀取失敗,保守等 {wait_min} 分鐘再跑...")
+            else:
+                wait_min = loop_min
             nxt = datetime.now(TZ).strftime("%H:%M")
-            print(f"[{nxt}] 等待 {loop_min} 分鐘後重跑(每 15 秒偵測網頁觸發)...")
-            waited = 0
-            while waited < loop_min * 60:
-                time.sleep(15)
-                waited += 15
-                # 距上一輪結束不到 5 分鐘,或上一輪被 FB 限流 -> 不接受提前觸發
-                if waited < MIN_TRIGGER_GAP or LAST_RUN_FAILED > 0:
-                    continue
-                t = latest_webtrigger()
-                if t and t != last_trigger:
-                    last_trigger = t
-                    print("偵測到網頁的「立即抓取」,提前重新更新!")
-                    break
+            print(f"[{nxt}] 等待 {wait_min} 分鐘後重跑...")
+            time.sleep(wait_min * 60)
