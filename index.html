@@ -109,6 +109,44 @@
     .prize-1 { background: rgba(250, 204, 21, 0.15);  color: #facc15; border: 1px solid rgba(250, 204, 21, 0.4); }
     .prize-2 { background: rgba(203, 213, 225, 0.15); color: #e2e8f0; border: 1px solid rgba(203, 213, 225, 0.4); }
     .prize-3 { background: rgba(217, 119, 6, 0.2);    color: #f59e0b; border: 1px solid rgba(217, 119, 6, 0.4); }
+    .countdown {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: rgba(250, 204, 21, 0.08);
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      color: #fde68a;
+    }
+    .countdown .cd-timer {
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #facc15;
+    }
+    .countdown.urgent {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fecaca;
+      animation: cd-pulse 1.5s ease-in-out infinite;
+    }
+    .countdown.urgent .cd-timer { color: #f87171; }
+    .countdown.ended {
+      background: rgba(148, 163, 184, 0.1);
+      border-color: rgba(148, 163, 184, 0.4);
+      color: #e2e8f0;
+      font-weight: 700;
+      justify-content: center;
+      animation: none;
+    }
+    @keyframes cd-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
     .item-left {
       display: flex;
       align-items: center;
@@ -158,6 +196,10 @@
       <label for="thresholdInput">門檻票數 ></label>
       <input type="number" id="thresholdInput" min="0" step="1" value="10">
       <span id="qualifiedCount"></span>
+    </div>
+    <div class="countdown" id="countdown">
+      <span>⏰ 投票截止:<b>11/8(六)晚上 8:00</b></span>
+      <span class="cd-timer" id="cdTimer"></span>
     </div>
   </div>
 
@@ -304,6 +346,28 @@
   const GH_TOKEN   = atob(['Z2l0aHViX3BhdF8xMUNVRzY0WEkwU0U2R2VabTdUS',
                            'DNpXzFwSUlvMWc2N29qUGdLc0cydlNBT3lVQmtOZ3',
                            'gxNm0wdGRXNUZMeGVROGtENUJNR0dDQ3pRa0ZEOExG'].join(''));
+
+  // ===== 投票截止倒數(固定台北時間 2026/11/8 20:00)=====
+  const DEADLINE = new Date('2026-11-08T20:00:00+08:00');
+
+  function updateCountdown() {
+    const box = document.getElementById('countdown');
+    const timer = document.getElementById('cdTimer');
+    const ms = DEADLINE.getTime() - Date.now();
+    if (ms <= 0) {
+      box.className = 'countdown ended';
+      box.innerHTML = '🏁 投票已於 11/8 晚上 8:00 截止,以下為最終結果';
+      clearInterval(cdTick);
+      return;
+    }
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor(ms / 60000) % 60;
+    const s = Math.floor(ms / 1000) % 60;
+    timer.innerText = `倒數 ${h} 小時 ${String(m).padStart(2,'0')} 分 ${String(s).padStart(2,'0')} 秒`;
+    if (ms < 3600000) box.classList.add('urgent');  // 最後 1 小時紅色警示
+  }
+  const cdTick = setInterval(updateCountdown, 1000);
+  updateCountdown();
 
   // 初始載入與每 15 秒自動更新畫面(分頁沒開著時暫停,省 API 流量);
   // 票數由電腦端每 10 分鐘自動抓取一次並上傳
