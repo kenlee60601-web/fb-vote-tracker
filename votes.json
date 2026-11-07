@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/08 00:32",
+  "updated_at": "2026/11/08 00:44",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -54,7 +54,7 @@
     {
       "id": "11號",
       "name": "不給糖就搗蛋",
-      "votes": 106,
+      "votes": 107,
       "rank": 9
     },
     {
