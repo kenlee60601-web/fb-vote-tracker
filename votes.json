@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/07 09:51",
+  "updated_at": "2026/11/07 10:02",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -196,6 +196,12 @@
       "rank": 32
     },
     {
+      "id": "26號",
+      "name": "",
+      "votes": 7,
+      "rank": 32
+    },
+    {
       "id": "31號",
       "name": "",
       "votes": 7,
@@ -217,43 +223,37 @@
       "id": "9號",
       "name": "",
       "votes": 6,
-      "rank": 36
+      "rank": 37
     },
     {
       "id": "12號",
       "name": "",
       "votes": 6,
-      "rank": 36
-    },
-    {
-      "id": "26號",
-      "name": "",
-      "votes": 6,
-      "rank": 36
+      "rank": 37
     },
     {
       "id": "28號",
       "name": "",
       "votes": 6,
-      "rank": 36
+      "rank": 37
     },
     {
       "id": "33號",
       "name": "",
       "votes": 6,
-      "rank": 36
+      "rank": 37
     },
     {
       "id": "36號",
       "name": "",
       "votes": 6,
-      "rank": 36
+      "rank": 37
     },
     {
       "id": "48號",
       "name": "",
       "votes": 6,
-      "rank": 36
+      "rank": 37
     },
     {
       "id": "3號",
