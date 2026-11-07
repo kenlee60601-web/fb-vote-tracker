@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/07 14:20",
+  "updated_at": "2026/11/07 14:31",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -42,20 +42,20 @@
     {
       "id": "18號",
       "name": "殭屍",
-      "votes": 133,
+      "votes": 134,
       "rank": 7
+    },
+    {
+      "id": "11號",
+      "name": "不給糖就搗蛋",
+      "votes": 97,
+      "rank": 8
     },
     {
       "id": "24號",
       "name": "胡迪警長",
       "votes": 97,
       "rank": 8
-    },
-    {
-      "id": "11號",
-      "name": "不給糖就搗蛋",
-      "votes": 96,
-      "rank": 9
     },
     {
       "id": "46號",
