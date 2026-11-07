@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/07 18:09",
+  "updated_at": "2026/11/08 00:32",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -18,19 +18,19 @@
     {
       "id": "45號",
       "name": "汪汪隊",
-      "votes": 198,
+      "votes": 199,
       "rank": 3
     },
     {
       "id": "25號",
       "name": "劍客",
-      "votes": 154,
+      "votes": 157,
       "rank": 4
     },
     {
       "id": "15號",
       "name": "小公主",
-      "votes": 152,
+      "votes": 153,
       "rank": 5
     },
     {
@@ -48,13 +48,13 @@
     {
       "id": "46號",
       "name": "胡尼克",
-      "votes": 108,
+      "votes": 110,
       "rank": 8
     },
     {
       "id": "11號",
       "name": "不給糖就搗蛋",
-      "votes": 99,
+      "votes": 106,
       "rank": 9
     },
     {
@@ -66,7 +66,7 @@
     {
       "id": "19號",
       "name": "獵魔女團",
-      "votes": 66,
+      "votes": 67,
       "rank": 11
     },
     {
