@@ -149,52 +149,62 @@ LAST_RUN_FAILED = 0       # 上一輪讀取失敗的張數(>0 代表可能被 FB
 MIN_TRIGGER_GAP = 300     # 網頁觸發最快也要距上一輪結束 5 分鐘,保護 FB 不被連續掃
 
 async def scrape_album_fast(prev_results):
-    """快速模式:照片網址已知(album_raw.json),平行直接開各照片頁讀讚數。
-    每個環境只看 4 張(FB 未登入配額),約 2 分鐘掃完整本相簿。"""
-    order_fbid = [(r["order"], r["fbid"]) for r in prev_results]
+    """細水長流模式:一次只看一張,每張隨機間隔 7~13 秒,每 4 張換全新環境。
+    門檻附近以上的照片每輪必掃,低票照片抽樣掃(約 1/3)以降低總請求量。
+    一輪約 9~10 分鐘,請求強度低、無爆發尖峰,大幅降低被 FB 限流的機率。"""
+    import random
     prev_votes = {r["fbid"]: r["votes"] for r in prev_results}
-    chunks = [order_fbid[i:i + 4] for i in range(0, len(order_fbid), 4)]
-    sem = asyncio.Semaphore(PARALLEL)
+    targets = [(r["order"], r["fbid"]) for r in prev_results
+               if r["votes"] >= THRESHOLD - 5 or random.random() < 0.34]
     out = {}
-
+    failed = 0
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-
-        async def fetch_chunk(chunk):
-            async with sem:
-                ctx = await browser.new_context(user_agent=UA, locale="zh-TW",
-                                                viewport={"width": 1280, "height": 900})
-                page = await ctx.new_page()
+        ctx = None
+        page = None
+        views = 0
+        try:
+            for order, fbid in targets:
+                if ctx is None or views >= 4:  # FB 未登入配額:每環境 4 張
+                    if ctx:
+                        await ctx.close()
+                    ctx = await browser.new_context(user_agent=UA, locale="zh-TW",
+                                                    viewport={"width": 1280, "height": 900})
+                    page = await ctx.new_page()
+                    views = 0
                 try:
-                    for order, fbid in chunk:
-                        try:
-                            await page.goto(
-                                f"https://www.facebook.com/photo/?fbid={fbid}&set={SET_ID}",
-                                wait_until="domcontentloaded", timeout=45000)
-                            try:
-                                await page.wait_for_selector("text=所有心情", timeout=10000)
-                            except Exception:
-                                pass
-                            await asyncio.sleep(0.5)
-                            body = await page.locator("body").inner_text()
-                            if "所有心情" in body:
-                                out[fbid] = parse_reactions(body)
-                                print(f"  #{order} fbid={fbid} votes={out[fbid]}", flush=True)
-                            else:
-                                print(f"  #{order} fbid={fbid} 讀不到讚數(可能被限流)", flush=True)
-                        except Exception as e:
-                            print(f"  #{order} fbid={fbid} 失敗: {str(e)[:80]}", flush=True)
-                finally:
-                    await ctx.close()
+                    await page.goto(
+                        f"https://www.facebook.com/photo/?fbid={fbid}&set={SET_ID}",
+                        wait_until="domcontentloaded", timeout=45000)
+                    try:
+                        await page.wait_for_selector("text=所有心情", timeout=10000)
+                    except Exception:
+                        pass
+                    body = await page.locator("body").inner_text()
+                    if "所有心情" in body:
+                        out[fbid] = parse_reactions(body)
+                        print(f"  #{order} fbid={fbid} votes={out[fbid]}", flush=True)
+                    else:
+                        failed += 1
+                        print(f"  #{order} 讀不到讚數(可能被限流)", flush=True)
+                except Exception as e:
+                    failed += 1
+                    print(f"  #{order} 失敗: {str(e)[:60]}", flush=True)
+                views += 1
+                if failed >= 6:
+                    print("多張連續失敗,提前中止本輪", flush=True)
+                    break
+                await asyncio.sleep(random.uniform(7, 13))
+            if ctx:
+                await ctx.close()
+        finally:
+            await browser.close()
 
-        await asyncio.gather(*[fetch_chunk(c) for c in chunks])
-        await browser.close()
-
-    failed = len(order_fbid) - len(out)
-    if failed > 8:
-        print(f"{failed} 張照片讀取失敗(超過容忍值),疑似被 FB 限流")
+    if failed >= 6 or (targets and not out):
+        print(f"{failed} 張讀取失敗,疑似被 FB 限流,保留原有資料")
         sys.exit(1)
-    # 少數失敗的照片沿用上一輪票數,避免名單跳動
+    globals()["LAST_RUN_FAILED"] = failed
+    # 沒掃到的(抽樣跳過或少數失敗)沿用上一輪票數
     results = []
     for r in prev_results:
         votes = out.get(r["fbid"], prev_votes.get(r["fbid"], 0))
@@ -204,7 +214,6 @@ async def scrape_album_fast(prev_results):
         json.dump(results, f, ensure_ascii=False, indent=2)
     if failed:
         print(f"注意:{failed} 張讀取失敗,沿用上一輪票數")
-    globals()["LAST_RUN_FAILED"] = failed
     return results
 
 
@@ -385,8 +394,8 @@ if __name__ == "__main__":
             loop_min = int(sys.argv[sys.argv.index("--loop") + 1])
         except (IndexError, ValueError):
             loop_min = 20
-        # 快速模式一輪約 2~3 分鐘,間隔最少 5 分鐘以免 FB 限流
-        loop_min = max(5, loop_min)
+        # 細水長流模式一輪約 10 分鐘,輪與輪之間最少隔 2 分鐘
+        loop_min = max(2, loop_min)
 
     if loop_min is None:
         run_once(threshold)
