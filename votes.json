@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/07 14:41",
+  "updated_at": "2026/11/07 14:52",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -60,7 +60,7 @@
     {
       "id": "46號",
       "name": "胡尼克",
-      "votes": 92,
+      "votes": 94,
       "rank": 10
     },
     {
@@ -262,6 +262,12 @@
       "rank": 43
     },
     {
+      "id": "8號",
+      "name": "",
+      "votes": 5,
+      "rank": 43
+    },
+    {
       "id": "16號",
       "name": "",
       "votes": 5,
@@ -286,28 +292,22 @@
       "rank": 43
     },
     {
-      "id": "8號",
-      "name": "",
-      "votes": 4,
-      "rank": 48
-    },
-    {
       "id": "34號",
       "name": "",
       "votes": 4,
-      "rank": 48
+      "rank": 49
     },
     {
       "id": "38號",
       "name": "",
       "votes": 4,
-      "rank": 48
+      "rank": 49
     },
     {
       "id": "42號",
       "name": "",
       "votes": 4,
-      "rank": 48
+      "rank": 49
     },
     {
       "id": "52號",
