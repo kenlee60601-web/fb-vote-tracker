@@ -401,8 +401,8 @@ if __name__ == "__main__":
         run_once(threshold)
     else:
         import time
-        print(f"自動循環模式:每 {loop_min} 分鐘更新一次,"
-              "網頁按 🔄 立即抓取 可提前觸發 (Ctrl+C 停止)")
+        print(f"自動循環模式:一輪細水長流掃描約 10 分鐘,"
+              f"掃完休息 {loop_min} 分鐘再跑下一輪 (Ctrl+C 停止)")
         while True:
             ok = True
             globals()["LAST_RUN_FAILED"] = 0
