@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/07 17:25",
+  "updated_at": "2026/11/07 17:36",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -48,7 +48,7 @@
     {
       "id": "46號",
       "name": "胡尼克",
-      "votes": 107,
+      "votes": 108,
       "rank": 8
     },
     {
