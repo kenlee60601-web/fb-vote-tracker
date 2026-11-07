@@ -208,6 +208,28 @@ async def scrape_album_fast(prev_results):
     return results
 
 
+async def probe_fb():
+    """輕量探測:只開 1 張照片,看 FB 是否已解除限流"""
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        ctx = await browser.new_context(user_agent=UA, locale="zh-TW")
+        page = await ctx.new_page()
+        ok = False
+        try:
+            await page.goto(
+                f"https://www.facebook.com/photo/?fbid={FIRST_FBID}&set={SET_ID}",
+                wait_until="domcontentloaded", timeout=45000)
+            try:
+                await page.wait_for_selector("text=所有心情", timeout=10000)
+            except Exception:
+                pass
+            ok = "所有心情" in await page.locator("body").inner_text()
+        except Exception:
+            pass
+        await browser.close()
+        return ok
+
+
 def build_votes_json(results, threshold):
     names = {}
     if os.path.exists(NAMES_FILE):
@@ -382,10 +404,16 @@ if __name__ == "__main__":
             except (Exception, SystemExit) as e:
                 print("本輪更新失敗:", e)
                 ok = False
-            # 被限流時加倍退避:持續敲門只會讓 FB 封更久
+            # 被限流時退避:每 5 分鐘只用 1 張照片輕量探測,解除後自動恢復
             if not ok:
-                wait_min = max(loop_min, 30)
-                print(f"疑似被 FB 限流,休息 {wait_min} 分鐘讓封鎖解除...")
+                print("疑似被 FB 限流,改為每 5 分鐘輕量探測(換 IP 或自然解封都會自動恢復)...")
+                while True:
+                    time.sleep(5 * 60)
+                    if asyncio.run(probe_fb()):
+                        print(f"[{datetime.now(TZ).strftime('%H:%M')}] FB 已解除限流,立即恢復更新!")
+                        break
+                    print(f"[{datetime.now(TZ).strftime('%H:%M')}] 仍被限流,繼續等...")
+                continue
             elif LAST_RUN_FAILED > 0:
                 wait_min = max(loop_min, 15)
                 print(f"部分照片讀取失敗,保守等 {wait_min} 分鐘再跑...")
