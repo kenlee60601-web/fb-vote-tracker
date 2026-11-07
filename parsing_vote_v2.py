@@ -155,7 +155,8 @@ async def scrape_album_fast(prev_results):
     import random
     prev_votes = {r["fbid"]: r["votes"] for r in prev_results}
     targets = [(r["order"], r["fbid"]) for r in prev_results
-               if r["votes"] >= THRESHOLD - 5 or random.random() < 0.34]
+               if globals().get("FINAL_MODE")  # 最終結算:全部掃,不抽樣
+               or r["votes"] >= THRESHOLD - 5 or random.random() < 0.34]
     out = {}
     failed = 0
     async with async_playwright() as p:
@@ -401,9 +402,15 @@ if __name__ == "__main__":
         run_once(threshold)
     else:
         import time
+        DEADLINE = datetime(2026, 11, 8, 20, 0, tzinfo=TZ)
         print(f"自動循環模式:一輪細水長流掃描約 10 分鐘,"
-              f"掃完休息 {loop_min} 分鐘再跑下一輪 (Ctrl+C 停止)")
+              f"掃完休息 {loop_min} 分鐘再跑下一輪;"
+              "11/8 20:00 到點自動做最終結算後停止 (Ctrl+C 停止)")
         while True:
+            is_final = datetime.now(TZ) >= DEADLINE
+            globals()["FINAL_MODE"] = is_final
+            if is_final:
+                print("⏰ 已到投票截止時間(11/8 20:00),開始最終結算(全部照片完整掃描)...")
             ok = True
             globals()["LAST_RUN_FAILED"] = 0
             try:
@@ -413,6 +420,13 @@ if __name__ == "__main__":
             except (Exception, SystemExit) as e:
                 print("本輪更新失敗:", e)
                 ok = False
+            if is_final and ok:
+                if LAST_RUN_FAILED > 3:
+                    print("最終結算有多張讀取失敗,10 分鐘後重試...")
+                    time.sleep(600)
+                    continue
+                print("🏁 最終結算完成並已上傳!自動停止,不再更新。")
+                break
             # 被限流時退避:每 5 分鐘只用 1 張照片輕量探測,解除後自動恢復
             if not ok:
                 print("疑似被 FB 限流,改為每 5 分鐘輕量探測(換 IP 或自然解封都會自動恢復)...")
@@ -429,5 +443,10 @@ if __name__ == "__main__":
             else:
                 wait_min = loop_min
             nxt = datetime.now(TZ).strftime("%H:%M")
-            print(f"[{nxt}] 等待 {wait_min} 分鐘後重跑...")
-            time.sleep(wait_min * 60)
+            print(f"[{nxt}] 等待 {wait_min} 分鐘後重跑(20:00 到點會提前醒來做最終結算)...")
+            waited = 0
+            while waited < wait_min * 60:
+                time.sleep(30)
+                waited += 30
+                if datetime.now(TZ) >= DEADLINE:
+                    break
