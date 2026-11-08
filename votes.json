@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026/11/08 10:03",
+  "updated_at": "2026/11/08 10:10",
   "threshold": 10,
   "total_qualified": 28,
   "data": [
@@ -40,7 +40,7 @@
     },
     {
       "id": "17號",
-      "name": "方家園獵魔女團",
+      "name": "獵魔女團",
       "votes": 143,
       "img": "https://scontent-tpe1-1.xx.fbcdn.net/v/t39.30808-6/861259135_1634581365127613_6856921645609922261_n.jpg?stp=dst-jpg_tt6&cstp=mx1108x1477&ctp=s1108x1477&_nc_cat=106&ccb=1-7&_nc_sid=833d8c&_nc_ohc=jTYxJoWrdJAQ7kNvwF7-lMT&_nc_oc=AdpxOZIEeR4lLVOxCHasoOxPMgQJ9fdkIMS8sVDvx5w4VNyJtjmmJld9izTDyIt5B2Y&_nc_zt=23&_nc_ht=scontent-tpe1-1.xx&_nc_gid=IFsiHIIx18VBsWRd6jW4kg&_nc_ss=7b289&oh=00_AQRfAlB0KfMX9h82ouLu7qk5n32hzzreCCCcfwPxlzYzcA&oe=6AF38CA5",
       "rank": 6
@@ -159,7 +159,7 @@
     },
     {
       "id": "7號",
-      "name": "",
+      "name": "小幽靈",
       "votes": 15,
       "img": "https://scontent-tpe5-1.xx.fbcdn.net/v/t39.30808-6/863598569_1634581901794226_5111959960505269385_n.jpg?stp=dst-jpg_tt6&cstp=mx1108x1477&ctp=s1108x1477&_nc_cat=110&ccb=1-7&_nc_sid=833d8c&_nc_ohc=wBHYGWe-p9sQ7kNvwFeV_kA&_nc_oc=Adoy3jrEaIgQEY9Rj70lg73HZT2r_9MvUfHMIPq7ws7ztMrmltRfEF7Txl5atfmDQF0&_nc_zt=23&_nc_ht=scontent-tpe5-1.xx&_nc_gid=305YKDW-oGvyaXe7kQKsUA&_nc_ss=7b289&oh=00_AQQG-ZnvUvheEFFHtvzM4xC8QvLFmOv3PYIq7DZhkLQ9Zg&oe=6AF38B8D",
       "rank": 23
@@ -173,7 +173,7 @@
     },
     {
       "id": "21號",
-      "name": "永美雪花冰小丸子",
+      "name": "小丸子",
       "votes": 12,
       "img": "https://scontent.ftpe7-1.fna.fbcdn.net/v/t39.30808-6/865119508_1634581391794277_6876715124391756972_n.jpg?stp=dst-jpg_tt6&cstp=mx1108x1477&ctp=s1108x1477&_nc_cat=106&ccb=1-7&_nc_sid=833d8c&_nc_ohc=QZyB2nrkpCsQ7kNvwGAsslV&_nc_oc=AdpIixSCxaVGoY9RDAiL7r4Q-Yy-XoMnKz_yMPMDP1ClvdVXW1Og3Ze5iaqT9mE8pQU&_nc_zt=23&_nc_ht=scontent.ftpe7-1.fna&_nc_gid=BcxIyoK9L_i_qcrboNw9dA&_nc_ss=7b289&oh=00_AQS_f8kqWfCLLWted20xJQTYqA8mAcvn3qaqc_VrlI8AZw&oe=6AF3792F",
       "rank": 24
