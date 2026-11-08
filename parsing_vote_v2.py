@@ -151,7 +151,7 @@ MIN_TRIGGER_GAP = 300     # 網頁觸發最快也要距上一輪結束 5 分鐘,
 async def scrape_album_fast(prev_results):
     """細水長流模式:一次只看一張,每張隨機間隔 7~13 秒,每 4 張換全新環境。
     門檻附近以上的照片每輪必掃,低票照片抽樣掃(約 1/3)以降低總請求量。
-    一輪約 9~10 分鐘,請求強度低、無爆發尖峰,大幅降低被 FB 限流的機率。"""
+    每輪約 20 張、5 分鐘,請求強度低、無爆發尖峰,大幅降低被 FB 限流的機率。"""
     import random
     prev_votes = {r["fbid"]: r["votes"] for r in prev_results}
     # 只有票數前 15 名(獎項競爭者)每輪必掃,其餘抽 1/4,大幅降低請求量
@@ -186,8 +186,15 @@ async def scrape_album_fast(prev_results):
                         pass
                     body = await page.locator("body").inner_text()
                     if "所有心情" in body:
-                        out[fbid] = parse_reactions(body)
-                        print(f"  #{order} fbid={fbid} votes={out[fbid]}", flush=True)
+                        img = None
+                        try:
+                            el = page.locator('img[data-visualcompletion="media-vc-image"]')
+                            if await el.count() > 0:
+                                img = await el.first.get_attribute("src")
+                        except Exception:
+                            pass
+                        out[fbid] = (parse_reactions(body), img)
+                        print(f"  #{order} fbid={fbid} votes={out[fbid][0]}", flush=True)
                     else:
                         failed += 1
                         print(f"  #{order} 讀不到讚數(可能被限流)", flush=True)
@@ -211,9 +218,13 @@ async def scrape_album_fast(prev_results):
     # 沒掃到的(抽樣跳過或少數失敗)沿用上一輪票數
     results = []
     for r in prev_results:
-        votes = out.get(r["fbid"], prev_votes.get(r["fbid"], 0))
+        if r["fbid"] in out:
+            votes, img = out[r["fbid"]]
+            img = img or r.get("img")
+        else:
+            votes, img = prev_votes.get(r["fbid"], 0), r.get("img")
         results.append({"order": r["order"], "fbid": r["fbid"],
-                        "votes": votes, "img": r.get("img")})
+                        "votes": votes, "img": img})
     with open(RAW_FILE, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
     if failed:
@@ -257,6 +268,7 @@ def build_votes_json(results, threshold):
             "id": info.get("id") or f"{r['order']}號",
             "name": info.get("name") or "",
             "votes": r["votes"],
+            "img": r.get("img") or "",
         })
     data.sort(key=lambda x: x["votes"], reverse=True)
 
@@ -406,8 +418,8 @@ if __name__ == "__main__":
     else:
         import time
         DEADLINE = datetime(2026, 11, 8, 20, 0, tzinfo=TZ)
-        print(f"自動循環模式:一輪細水長流掃描約 10 分鐘,"
-              f"掃完休息 {loop_min} 分鐘再跑下一輪;"
+        print(f"自動循環模式:每輪掃前15名+抽樣(約 5 分鐘),"
+              f"掃完休息 {loop_min} 分鐘;"
               "11/8 20:00 到點自動做最終結算後停止 (Ctrl+C 停止)")
         while True:
             is_final = datetime.now(TZ) >= DEADLINE

@@ -151,6 +151,31 @@
       display: flex;
       align-items: center;
     }
+    .thumb {
+      width: 46px;
+      height: 46px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-right: 10px;
+      cursor: zoom-in;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      cursor: zoom-out;
+    }
+    #lightbox img {
+      max-width: 92vw;
+      max-height: 92vh;
+      border-radius: 10px;
+    }
     ul.list {
       list-style: none;
       padding: 0;
@@ -206,6 +231,10 @@
   <ul class="list" id="voteList">
     <!-- 動態插入 -->
   </ul>
+</div>
+
+<div id="lightbox" onclick="this.style.display='none'">
+  <img id="lightboxImg" alt="">
 </div>
 
 <script>
@@ -289,7 +318,7 @@
   function render(payload) {
     const ago = freshnessText(payload.updated_at);
     document.getElementById('updateTime').innerText =
-      `${payload.updated_at} 更新${ago ? `・${ago}` : ''}（每 10 分鐘自動更新・門檻 > ${threshold} 票）`;
+      `${payload.updated_at} 更新${ago ? `・${ago}` : ''}（約每 15 分鐘自動更新・門檻 > ${threshold} 票）`;
 
     const list = filteredList(payload);
     document.getElementById('qualifiedCount').innerText = `符合 ${list.length} 位`;
@@ -306,6 +335,8 @@
         <div class="item-left">
           ${prize.label ? `<span class="prize ${prize.cls}">${prize.label}</span>` : ''}
           <span class="item-rank${prize.badge}">${rank}</span>
+          ${item.img ? `<img class="thumb" src="${item.img}" loading="lazy"
+              onerror="this.style.display='none'" onclick="showLightbox(this.src)" alt="">` : ''}
           <div class="item-title">
             <span class="item-id">${item.id}</span>
             <span>${item.name}</span>
@@ -315,6 +346,11 @@
       `;
       listEl.appendChild(li);
     });
+  }
+
+  function showLightbox(src) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
   }
 
   function copyFormattedText() {
@@ -370,7 +406,7 @@
   updateCountdown();
 
   // 初始載入與每 15 秒自動更新畫面(分頁沒開著時暫停,省 API 流量);
-  // 票數由電腦端每 10 分鐘自動抓取一次並上傳
+  // 票數由電腦端約每 15 分鐘自動抓取一次並上傳
   loadData();
   setInterval(() => { if (!document.hidden) loadData(); }, 15000);
 </script>

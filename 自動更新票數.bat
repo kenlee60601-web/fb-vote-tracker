@@ -1,12 +1,11 @@
 @echo off
 chcp 65001 > nul
 cd /d "%~dp0"
-echo === 從 GitHub 取得最新版程式 ===
+echo === Step 1: Update code from GitHub ===
 git pull --rebase --autostash
-echo === 設定電腦插電時永不睡眠(螢幕可以關,程式照跑)===
+echo === Step 2: Keep PC awake while plugged in ===
 powercfg /change standby-timeout-ac 0 2>nul
 powercfg /change hibernate-timeout-ac 0 2>nul
-echo === FB 投票自動更新:前15名每輪必掃,約每 15 分鐘更新一輪(防限流) ===
-echo === 關閉此視窗即停止 ===
+echo === Step 3: Start FB vote auto-update (close window to stop) ===
 python parsing_vote_v2.py --threshold 10 --loop 10 --push
 pause
