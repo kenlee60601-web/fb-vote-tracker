@@ -154,9 +154,12 @@ async def scrape_album_fast(prev_results):
     一輪約 9~10 分鐘,請求強度低、無爆發尖峰,大幅降低被 FB 限流的機率。"""
     import random
     prev_votes = {r["fbid"]: r["votes"] for r in prev_results}
+    # 只有票數前 15 名(獎項競爭者)每輪必掃,其餘抽 1/4,大幅降低請求量
+    top15 = {r["fbid"] for r in sorted(prev_results,
+             key=lambda r: r["votes"], reverse=True)[:15]}
     targets = [(r["order"], r["fbid"]) for r in prev_results
                if globals().get("FINAL_MODE")  # 最終結算:全部掃,不抽樣
-               or r["votes"] >= THRESHOLD - 5 or random.random() < 0.34]
+               or r["fbid"] in top15 or random.random() < 0.25]
     out = {}
     failed = 0
     async with async_playwright() as p:
@@ -195,7 +198,7 @@ async def scrape_album_fast(prev_results):
                 if failed >= 6:
                     print("多張連續失敗,提前中止本輪", flush=True)
                     break
-                await asyncio.sleep(random.uniform(7, 13))
+                await asyncio.sleep(random.uniform(10, 18))
             if ctx:
                 await ctx.close()
         finally:
